@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
+
 import '../../core/theme/app_theme.dart';
 import '../../domain/entities/expense.dart';
 
@@ -21,7 +21,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
   final _amountFocusNode = FocusNode();
-  
+
   ExpenseCategory? _selectedCategory;
   bool _isLoading = false;
 
@@ -32,7 +32,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _amountFocusNode.requestFocus();
     });
-    
+
     // Listener para sugerir categoría automáticamente
     _amountController.addListener(_onAmountChanged);
   }
@@ -48,7 +48,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
   void _onAmountChanged() {
     final text = _amountController.text.replaceAll(',', '');
     final amount = double.tryParse(text);
-    
+
     if (amount != null && _selectedCategory == null) {
       setState(() {
         _selectedCategory = Expense.suggestCategory(amount);
@@ -72,110 +72,111 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
         top: 20,
         bottom: MediaQuery.of(context).viewInsets.bottom + 20,
       ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Agregar gasto',
-                  style: Theme.of(context).textTheme.headlineMedium,
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Agregar gasto',
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+
+              // Campo de monto
+              Text(
+                'Monto *',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _amountController,
+                focusNode: _amountFocusNode,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  _ThousandsSeparatorInputFormatter(),
+                ],
+                decoration: const InputDecoration(
+                  hintText: '0',
+                  prefixText: '\$ ',
+                  prefixStyle: TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 16,
+                  ),
                 ),
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close),
+                style: Theme.of(context).textTheme.titleLarge,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Ingresa el monto del gasto';
+                  }
+                  final amount = double.tryParse(value.replaceAll(',', ''));
+                  if (amount == null || amount <= 0) {
+                    return 'Ingresa un monto válido';
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 24),
+
+              // Categorías
+              Text(
+                'Categoría',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              _buildCategorySelector(),
+
+              const SizedBox(height: 24),
+
+              // Nota opcional
+              Text(
+                'Nota (opcional)',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _noteController,
+                decoration: const InputDecoration(
+                  hintText: 'Ej: Almuerzo con amigos',
                 ),
-              ],
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Campo de monto
-            Text(
-              'Monto *',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _amountController,
-              focusNode: _amountFocusNode,
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                _ThousandsSeparatorInputFormatter(),
-              ],
-              decoration: const InputDecoration(
-                hintText: '0',
-                prefixText: '\$ ',
-                prefixStyle: TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 16,
+                maxLines: 2,
+              ),
+
+              const SizedBox(height: 32),
+
+              // Botón guardar
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _saveExpense,
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Guardar gasto'),
                 ),
               ),
-              style: Theme.of(context).textTheme.titleLarge,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Ingresa el monto del gasto';
-                }
-                final amount = double.tryParse(value.replaceAll(',', ''));
-                if (amount == null || amount <= 0) {
-                  return 'Ingresa un monto válido';
-                }
-                return null;
-              },
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Categorías
-            Text(
-              'Categoría',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            _buildCategorySelector(),
-            
-            const SizedBox(height: 24),
-            
-            // Nota opcional
-            Text(
-              'Nota (opcional)',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _noteController,
-              decoration: const InputDecoration(
-                hintText: 'Ej: Almuerzo con amigos',
-              ),
-              maxLines: 2,
-            ),
-            
-            const SizedBox(height: 32),
-            
-            // Botón guardar
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _saveExpense,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Guardar gasto'),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -192,13 +193,11 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: isSelected 
-                  ? AppTheme.primaryGreen 
-                  : AppTheme.backgroundGrey,
+              color:
+                  isSelected ? AppTheme.primaryGreen : AppTheme.backgroundGrey,
               borderRadius: BorderRadius.circular(20),
-              border: isSelected 
-                  ? null 
-                  : Border.all(color: AppTheme.dividerGrey),
+              border:
+                  isSelected ? null : Border.all(color: AppTheme.dividerGrey),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -211,12 +210,8 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                 Text(
                   category.displayName,
                   style: TextStyle(
-                    color: isSelected 
-                        ? Colors.white 
-                        : AppTheme.textPrimary,
-                    fontWeight: isSelected 
-                        ? FontWeight.w600 
-                        : FontWeight.w400,
+                    color: isSelected ? Colors.white : AppTheme.textPrimary,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   ),
                 ),
               ],
@@ -229,7 +224,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
 
   Future<void> _saveExpense() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     if (_selectedCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -245,19 +240,21 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
     try {
       final amountText = _amountController.text.replaceAll(',', '');
       final amount = double.parse(amountText);
-      
+
+      print('DEBUG: amountText = "$amountText", amount = $amount'); // Debug
+
       final expense = Expense(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         amount: amount,
         category: _selectedCategory!,
         date: DateTime.now(),
-        note: _noteController.text.trim().isEmpty 
-            ? null 
+        note: _noteController.text.trim().isEmpty
+            ? null
             : _noteController.text.trim(),
       );
 
       widget.onExpenseAdded(expense);
-      
+
       if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -294,17 +291,38 @@ class _ThousandsSeparatorInputFormatter extends TextInputFormatter {
       return newValue;
     }
 
-    final number = int.tryParse(newValue.text.replaceAll(',', ''));
+    // Solo permitir dígitos y comas
+    final cleanText = newValue.text.replaceAll(RegExp(r'[^0-9,]'), '');
+
+    // Remover comas para parsear el número
+    final digitsOnly = cleanText.replaceAll(',', '');
+
+    if (digitsOnly.isEmpty) {
+      return const TextEditingValue(
+        text: '',
+        selection: TextSelection.collapsed(offset: 0),
+      );
+    }
+
+    final number = int.tryParse(digitsOnly);
     if (number == null) {
       return oldValue;
     }
 
-    final formatter = NumberFormat('#,###', 'es_CO');
-    final newText = formatter.format(number);
-    
+    // Formatear manualmente
+    String numStr = number.toString();
+    String result = '';
+
+    for (int i = 0; i < numStr.length; i++) {
+      if (i > 0 && (numStr.length - i) % 3 == 0) {
+        result += ',';
+      }
+      result += numStr[i];
+    }
+
     return TextEditingValue(
-      text: newText,
-      selection: TextSelection.collapsed(offset: newText.length),
+      text: result,
+      selection: TextSelection.collapsed(offset: result.length),
     );
   }
 }

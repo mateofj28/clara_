@@ -1,10 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../../../core/di/injection_container.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/entities/expense.dart';
 import '../../../domain/entities/expense_summary.dart';
 import '../../bloc/expense_bloc.dart';
+
+String formatCurrency(double amount) {
+  // Convertir a entero para evitar decimales
+  int intAmount = amount.toInt();
+
+  // Formatear manualmente con separadores de miles
+  String numStr = intAmount.toString();
+  String result = '';
+
+  for (int i = 0; i < numStr.length; i++) {
+    if (i > 0 && (numStr.length - i) % 3 == 0) {
+      result += ',';
+    }
+    result += numStr[i];
+  }
+
+  return '\$$result';
+}
 
 class MonthlySummaryPage extends StatefulWidget {
   const MonthlySummaryPage({super.key});
@@ -34,7 +53,11 @@ class _MonthlySummaryPageState extends State<MonthlySummaryPage> {
 
   void _onBlocStateChanged() {
     if (mounted) {
-      setState(() {});
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {});
+        }
+      });
     }
   }
 
@@ -93,12 +116,6 @@ class _MonthlySummaryPageState extends State<MonthlySummaryPage> {
   }
 
   Widget _buildSummaryContent(ExpenseSummary summary) {
-    final currencyFormat = NumberFormat.currency(
-      locale: 'es_CO',
-      symbol: '\$',
-      decimalDigits: 0,
-    );
-
     final now = DateTime.now();
     final monthName = DateFormat('MMMM yyyy', 'es_ES').format(now);
 
@@ -120,18 +137,18 @@ class _MonthlySummaryPageState extends State<MonthlySummaryPage> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    currencyFormat.format(summary.totalMonth),
+                    formatCurrency(summary.totalMonth),
                     style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                      color: AppTheme.primaryGreen,
-                      fontWeight: FontWeight.w600,
-                    ),
+                          color: AppTheme.primaryGreen,
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Total gastado este mes',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
+                          color: AppTheme.textSecondary,
+                        ),
                   ),
                 ],
               ),
@@ -154,7 +171,6 @@ class _MonthlySummaryPageState extends State<MonthlySummaryPage> {
                       entry.key,
                       entry.value,
                       summary.categoryPercentages[entry.key] ?? 0,
-                      currencyFormat,
                     )),
           ] else ...[
             _buildEmptyCategories(),
@@ -173,7 +189,6 @@ class _MonthlySummaryPageState extends State<MonthlySummaryPage> {
     ExpenseCategory category,
     double amount,
     double percentage,
-    NumberFormat currencyFormat,
   ) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -196,9 +211,9 @@ class _MonthlySummaryPageState extends State<MonthlySummaryPage> {
                 ),
               ),
             ),
-            
+
             const SizedBox(width: 16),
-            
+
             // Información de la categoría
             Expanded(
               child: Column(
@@ -210,15 +225,15 @@ class _MonthlySummaryPageState extends State<MonthlySummaryPage> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    currencyFormat.format(amount),
+                    formatCurrency(amount),
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                 ],
               ),
             ),
-            
+
             // Porcentaje
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -229,8 +244,8 @@ class _MonthlySummaryPageState extends State<MonthlySummaryPage> {
               child: Text(
                 '${percentage.toStringAsFixed(0)}%',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
             ),
           ],
@@ -254,15 +269,15 @@ class _MonthlySummaryPageState extends State<MonthlySummaryPage> {
             Text(
               'Sin gastos este mes',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppTheme.textSecondary,
-              ),
+                    color: AppTheme.textSecondary,
+                  ),
             ),
             const SizedBox(height: 8),
             Text(
               'Cuando agregues gastos, verás el desglose aquí',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.textSecondary,
-              ),
+                    color: AppTheme.textSecondary,
+                  ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -273,13 +288,13 @@ class _MonthlySummaryPageState extends State<MonthlySummaryPage> {
 
   Widget _buildInterpretation(ExpenseSummary summary) {
     final topCategory = summary.topCategory;
-    final topPercentage = topCategory != null 
-        ? summary.categoryPercentages[topCategory] ?? 0 
-        : 0;
+    final topPercentage =
+        topCategory != null ? summary.categoryPercentages[topCategory] ?? 0 : 0;
 
     String interpretation = '';
     if (topCategory != null && topPercentage > 0) {
-      interpretation = '${topCategory.displayName} representa el ${topPercentage.toStringAsFixed(0)}% de tus gastos';
+      interpretation =
+          '${topCategory.displayName} representa el ${topPercentage.toStringAsFixed(0)}% de tus gastos';
     }
 
     return Card(
@@ -300,9 +315,9 @@ class _MonthlySummaryPageState extends State<MonthlySummaryPage> {
                 Text(
                   'Interpretación',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppTheme.primaryGreen,
-                    fontWeight: FontWeight.w600,
-                  ),
+                        color: AppTheme.primaryGreen,
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
               ],
             ),
@@ -311,8 +326,8 @@ class _MonthlySummaryPageState extends State<MonthlySummaryPage> {
               Text(
                 interpretation,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.primaryGreen,
-                ),
+                      color: AppTheme.primaryGreen,
+                    ),
               ),
             ],
           ],
@@ -335,15 +350,15 @@ class _MonthlySummaryPageState extends State<MonthlySummaryPage> {
           Text(
             'Sin datos para mostrar',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: AppTheme.textSecondary,
-            ),
+                  color: AppTheme.textSecondary,
+                ),
           ),
           const SizedBox(height: 8),
           Text(
             'Agrega algunos gastos para ver tu resumen',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppTheme.textSecondary,
-            ),
+                  color: AppTheme.textSecondary,
+                ),
           ),
         ],
       ),

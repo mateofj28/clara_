@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/di/injection_container.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/entities/expense_summary.dart';
@@ -6,9 +7,9 @@ import '../../bloc/expense_bloc.dart';
 import '../../widgets/add_expense_modal.dart';
 import '../monthly_summary/monthly_summary_page.dart';
 import '../settings/settings_page.dart';
-import 'widgets/home_header.dart';
-import 'widgets/expense_summary_card.dart';
 import 'widgets/alerts_section.dart';
+import 'widgets/expense_summary_card.dart';
+import 'widgets/home_header.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -37,7 +38,11 @@ class _HomePageState extends State<HomePage> {
 
   void _onBlocStateChanged() {
     if (mounted) {
-      setState(() {});
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {});
+        }
+      });
     }
   }
 
@@ -55,6 +60,7 @@ class _HomePageState extends State<HomePage> {
       bottomNavigationBar: _buildBottomNavBar(),
       floatingActionButton: _currentIndex == 0 ? _buildFAB() : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      extendBody: true, // Para que el body se extienda detrás del bottom nav
     );
   }
 
@@ -104,8 +110,8 @@ class _HomePageState extends State<HomePage> {
             Text(
               state.message,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.textSecondary,
-              ),
+                    color: AppTheme.textSecondary,
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -138,7 +144,7 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 24),
           ],
           _buildQuickActions(),
-          const SizedBox(height: 100), // Espacio para el FAB
+          const SizedBox(height: 80), // Espacio para el FAB y bottom nav
         ],
       ),
     );
@@ -171,8 +177,8 @@ class _HomePageState extends State<HomePage> {
           Text(
             'Comienza a registrar tus gastos\npara tener claridad total',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: AppTheme.textSecondary,
-            ),
+                  color: AppTheme.textSecondary,
+                ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -257,37 +263,123 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildBottomNavBar() {
-    return BottomNavigationBar(
-      currentIndex: _currentIndex,
-      onTap: (index) => setState(() => _currentIndex = index),
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: AppTheme.primaryGreen,
-      unselectedItemColor: AppTheme.textSecondary,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          activeIcon: Icon(Icons.home),
-          label: 'Inicio',
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Container(
+          height: 80,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(
+                icon: Icons.home_outlined,
+                activeIcon: Icons.home,
+                label: 'Inicio',
+                index: 0,
+              ),
+              _buildNavItem(
+                icon: Icons.bar_chart_outlined,
+                activeIcon: Icons.bar_chart,
+                label: 'Resumen',
+                index: 1,
+              ),
+              _buildNavItem(
+                icon: Icons.settings_outlined,
+                activeIcon: Icons.settings,
+                label: 'Ajustes',
+                index: 2,
+              ),
+            ],
+          ),
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.bar_chart_outlined),
-          activeIcon: Icon(Icons.bar_chart),
-          label: 'Resumen',
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+    required int index,
+  }) {
+    final isActive = _currentIndex == index;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _currentIndex = index),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: isActive
+                ? AppTheme.primaryGreen.withValues(alpha: 0.1)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                isActive ? activeIcon : icon,
+                color:
+                    isActive ? AppTheme.primaryGreen : AppTheme.textSecondary,
+                size: 22,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                  color:
+                      isActive ? AppTheme.primaryGreen : AppTheme.textSecondary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.settings_outlined),
-          activeIcon: Icon(Icons.settings),
-          label: 'Ajustes',
-        ),
-      ],
+      ),
     );
   }
 
   Widget _buildFAB() {
-    return FloatingActionButton.extended(
-      onPressed: _showAddExpenseModal,
-      icon: const Icon(Icons.add),
-      label: const Text('Agregar gasto'),
+    return Container(
+      margin:
+          const EdgeInsets.only(bottom: 16), // Altura normal de floating button
+      child: SizedBox(
+        width: 220, // Ancho aumentado para mostrar "Agregar gasto" completo
+        height: 56,
+        child: ElevatedButton.icon(
+          onPressed: _showAddExpenseModal,
+          icon: const Icon(Icons.add, size: 24),
+          label: const Text(
+            'Agregar gasto',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primaryGreen,
+            foregroundColor: Colors.white,
+            elevation: 6,
+            shadowColor: AppTheme.primaryGreen.withValues(alpha: 0.4),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+            ),
+          ),
+        ),
+      ),
     );
   }
 

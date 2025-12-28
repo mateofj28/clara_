@@ -1,7 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+
 import '../../../../core/theme/app_theme.dart';
 import '../../../../domain/entities/expense_summary.dart';
+
+String formatCurrency(double amount) {
+  // Convertir a entero para evitar decimales
+  int intAmount = amount.toInt();
+
+  // Formatear manualmente con separadores de miles
+  String numStr = intAmount.toString();
+  String result = '';
+
+  for (int i = 0; i < numStr.length; i++) {
+    if (i > 0 && (numStr.length - i) % 3 == 0) {
+      result += ',';
+    }
+    result += numStr[i];
+  }
+
+  return '\$$result';
+}
 
 class ExpenseSummaryCard extends StatelessWidget {
   final ExpenseSummary summary;
@@ -13,12 +31,6 @@ class ExpenseSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(
-      locale: 'es_CO',
-      symbol: '\$',
-      decimalDigits: 0,
-    );
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -32,30 +44,30 @@ class ExpenseSummaryCard extends StatelessWidget {
                 Text(
                   'Hoy gastaste',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.textSecondary,
-                  ),
+                        color: AppTheme.textSecondary,
+                      ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  currencyFormat.format(summary.totalToday),
+                  formatCurrency(summary.totalToday),
                   style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    color: AppTheme.primaryGreen,
-                    fontWeight: FontWeight.w600,
-                  ),
+                        color: AppTheme.primaryGreen,
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Divider
             Container(
               height: 1,
               color: AppTheme.dividerGrey,
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Información secundaria
             Row(
               children: [
@@ -63,7 +75,7 @@ class ExpenseSummaryCard extends StatelessWidget {
                   child: _buildSecondaryInfo(
                     context,
                     'Este mes',
-                    currencyFormat.format(summary.totalMonth),
+                    formatCurrency(summary.totalMonth),
                   ),
                 ),
                 if (summary.topCategory != null) ...[
@@ -83,7 +95,7 @@ class ExpenseSummaryCard extends StatelessWidget {
                 ],
               ],
             ),
-            
+
             // Mensaje motivacional
             if (summary.totalToday == 0 && summary.totalMonth > 0) ...[
               const SizedBox(height: 16),
@@ -105,9 +117,9 @@ class ExpenseSummaryCard extends StatelessWidget {
                       child: Text(
                         'Vas bien hoy 👍',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.primaryGreen,
-                          fontWeight: FontWeight.w500,
-                        ),
+                              color: AppTheme.primaryGreen,
+                              fontWeight: FontWeight.w500,
+                            ),
                       ),
                     ),
                   ],
@@ -127,15 +139,15 @@ class ExpenseSummaryCard extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: AppTheme.textSecondary,
-          ),
+                color: AppTheme.textSecondary,
+              ),
         ),
         const SizedBox(height: 4),
         Text(
           value,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+                fontWeight: FontWeight.w600,
+              ),
         ),
       ],
     );
