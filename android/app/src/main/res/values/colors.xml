@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Color de fondo para CLARA -->
+    <color name="clara_background">#FAFAFA</color>
+    <color name="clara_primary">#4CAF50</color>
+</resources>

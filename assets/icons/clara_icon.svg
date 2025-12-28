@@ -1,0 +1,21 @@
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo circular verde -->
+  <circle cx="96" cy="96" r="96" fill="#4CAF50"/>
+  
+  <!-- Círculo interno más claro -->
+  <circle cx="96" cy="96" r="80" fill="#66BB6A"/>
+  
+  <!-- Símbolo de peso ($) -->
+  <path d="M96 40 L96 152 M76 60 Q76 50 86 50 L106 50 Q116 50 116 60 Q116 70 106 70 L86 70 M86 122 L106 122 Q116 122 116 132 Q116 142 106 142 L86 142 Q76 142 76 132 Q76 122 86 122" 
+        stroke="white" 
+        stroke-width="8" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" 
+        fill="none"/>
+  
+  <!-- Puntos decorativos -->
+  <circle cx="130" cy="70" r="4" fill="white" opacity="0.8"/>
+  <circle cx="62" cy="122" r="4" fill="white" opacity="0.8"/>
+  <circle cx="140" cy="130" r="3" fill="white" opacity="0.6"/>
+  <circle cx="52" cy="70" r="3" fill="white" opacity="0.6"/>
+</svg>

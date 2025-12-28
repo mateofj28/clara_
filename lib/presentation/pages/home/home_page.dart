@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/di/injection_container.dart';
+import '../../../core/services/audio_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/entities/expense_summary.dart';
 import '../../bloc/expense_bloc.dart';
@@ -21,6 +22,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late ExpenseBloc _expenseBloc;
   int _currentIndex = 0;
+  final AudioService _audioService = AudioService();
 
   @override
   void initState() {
@@ -221,6 +223,44 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 12),
+        // Botón de prueba temporal para audio
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () async {
+              print('🔊 PRUEBA: Botón de prueba de audio presionado');
+              await _audioService.playAlertSound();
+
+              // Mostrar alerta visual como alternativa
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: [
+                        Icon(Icons.warning, color: Colors.white),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                              '🔊 SONIDO FUNCIONANDO: Escuchaste el tilin?'),
+                        ),
+                      ],
+                    ),
+                    backgroundColor: Colors.green,
+                    duration: Duration(seconds: 3),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+            icon: const Icon(Icons.volume_up),
+            label: const Text('🔊 PROBAR SONIDO DE ALERTA'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+            ),
+          ),
         ),
       ],
     );
