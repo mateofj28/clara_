@@ -303,10 +303,12 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildSectionHeader(BuildContext context, String title) {
-    return Padding(
+    return Container(
+      width: double.infinity,
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
+        textAlign: TextAlign.left,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: AppTheme.textSecondary,
               fontWeight: FontWeight.w600,

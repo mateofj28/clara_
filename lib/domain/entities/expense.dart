@@ -8,7 +8,7 @@ enum ExpenseCategory {
   otros('Otros', '📦');
 
   const ExpenseCategory(this.displayName, this.emoji);
-  
+
   final String displayName;
   final String emoji;
 }
@@ -49,10 +49,14 @@ class Expense extends Equatable {
 
   // Lógica de sugerencia de categoría
   static ExpenseCategory suggestCategory(double amount) {
-    if (amount < 30000) {
-      return ExpenseCategory.transporte;
-    } else {
+    if (amount >= 200000) {
+      return ExpenseCategory.deudas;
+    } else if (amount >= 100000) {
+      return ExpenseCategory.compras;
+    } else if (amount >= 50000) {
       return ExpenseCategory.comida;
+    } else {
+      return ExpenseCategory.transporte;
     }
   }
 

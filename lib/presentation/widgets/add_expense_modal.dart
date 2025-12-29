@@ -24,6 +24,8 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
 
   ExpenseCategory? _selectedCategory;
   bool _isLoading = false;
+  bool _userSelectedCategory =
+      false; // Para rastrear si el usuario eligió manualmente
 
   @override
   void initState() {
@@ -49,10 +51,14 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
     final text = _amountController.text.replaceAll(',', '');
     final amount = double.tryParse(text);
 
-    if (amount != null && _selectedCategory == null) {
-      setState(() {
-        _selectedCategory = Expense.suggestCategory(amount);
-      });
+    // Solo actualizar automáticamente si el usuario no ha seleccionado manualmente
+    if (amount != null && !_userSelectedCategory) {
+      final suggestedCategory = Expense.suggestCategory(amount);
+      if (_selectedCategory != suggestedCategory) {
+        setState(() {
+          _selectedCategory = suggestedCategory;
+        });
+      }
     }
   }
 
@@ -175,7 +181,11 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
       children: ExpenseCategory.values.map((category) {
         final isSelected = _selectedCategory == category;
         return GestureDetector(
-          onTap: () => setState(() => _selectedCategory = category),
+          onTap: () => setState(() {
+            _selectedCategory = category;
+            _userSelectedCategory =
+                true; // Marcar que el usuario eligió manualmente
+          }),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
