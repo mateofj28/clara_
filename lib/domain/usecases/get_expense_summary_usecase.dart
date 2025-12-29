@@ -8,6 +8,6 @@ class GetExpenseSummaryUseCase {
 
   Future<ExpenseSummary> call() async {
     final expenses = await repository.getAllExpenses();
-    return ExpenseSummary.fromExpenses(expenses);
+    return await ExpenseSummary.fromExpenses(expenses);
   }
 }

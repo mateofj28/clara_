@@ -125,52 +125,85 @@ class _MonthlySummaryPageState extends State<MonthlySummaryPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header con total del mes
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _capitalizeFirst(monthName),
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    formatCurrency(summary.totalMonth),
-                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                          color: AppTheme.primaryGreen,
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Total gastado este mes',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.textSecondary,
-                        ),
-                  ),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppTheme.primaryGreen,
+                  AppTheme.primaryGreenDark,
                 ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryGreen.withValues(alpha: 0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _capitalizeFirst(monthName),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  formatCurrency(summary.totalMonth),
+                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 36,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Total gastado este mes',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.8),
+                      ),
+                ),
+              ],
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
 
           // Desglose por categorías
-          Text(
-            'Desglose por categorías',
-            style: Theme.of(context).textTheme.titleLarge,
+          Row(
+            children: [
+              Icon(
+                Icons.pie_chart,
+                color: AppTheme.primaryGreen,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Desglose por categorías',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           if (summary.totalMonth > 0) ...[
             ...summary.categoryTotals.entries
                 .where((entry) => entry.value > 0)
-                .map((entry) => _buildCategoryCard(
+                .map((entry) => _buildModernCategoryCard(
                       entry.key,
                       entry.value,
                       summary.categoryPercentages[entry.key] ?? 0,
+                      summary.totalMonth,
                     )),
           ] else ...[
             _buildEmptyCategories(),
@@ -180,72 +213,147 @@ class _MonthlySummaryPageState extends State<MonthlySummaryPage> {
 
           // Interpretación
           if (summary.totalMonth > 0) _buildInterpretation(summary),
+
+          const SizedBox(height: 80), // Espacio para navegación
         ],
       ),
     );
   }
 
-  Widget _buildCategoryCard(
+  Widget _buildModernCategoryCard(
     ExpenseCategory category,
     double amount,
     double percentage,
+    double totalMonth,
   ) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
+    // Calcular la intensidad del color basado en el porcentaje
+    final intensity = (percentage / 100).clamp(0.0, 1.0);
+    final cardColor = Color.lerp(
+      AppTheme.primaryGreen.withValues(alpha: 0.1),
+      AppTheme.primaryGreen.withValues(alpha: 0.2),
+      intensity,
+    )!;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
           children: [
-            // Emoji e icono
+            // Barra de progreso visual
             Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: Text(
-                  category.emoji,
-                  style: const TextStyle(fontSize: 20),
+              height: 4,
+              width: double.infinity,
+              color: AppTheme.backgroundGrey,
+              child: FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: percentage / 100,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppTheme.primaryGreen,
+                        AppTheme.primaryGreenDark,
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
 
-            const SizedBox(width: 16),
-
-            // Información de la categoría
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            // Contenido de la tarjeta
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
                 children: [
-                  Text(
-                    category.displayName,
-                    style: Theme.of(context).textTheme.titleMedium,
+                  // Emoji con fondo colorido
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppTheme.primaryGreen.withValues(alpha: 0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        category.emoji,
+                        style: const TextStyle(fontSize: 24),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    formatCurrency(amount),
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
+
+                  const SizedBox(width: 16),
+
+                  // Información de la categoría
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          category.displayName,
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         ),
+                        const SizedBox(height: 4),
+                        Text(
+                          formatCurrency(amount),
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                color: AppTheme.primaryGreen,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${percentage.toStringAsFixed(1)}% del total',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppTheme.textSecondary,
+                                  ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Indicador visual del porcentaje
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryGreen.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${percentage.toStringAsFixed(0)}%',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: AppTheme.primaryGreen,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                      ),
+                    ),
                   ),
                 ],
-              ),
-            ),
-
-            // Porcentaje
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppTheme.backgroundGrey,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                '${percentage.toStringAsFixed(0)}%',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
               ),
             ),
           ],

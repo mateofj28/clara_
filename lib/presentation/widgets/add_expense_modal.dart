@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../domain/entities/expense.dart';
+import 'amount_input_field.dart';
 
 class AddExpenseModal extends StatefulWidget {
   final Function(Expense) onExpenseAdded;
@@ -97,27 +97,13 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
               const SizedBox(height: 24),
 
               // Campo de monto
-              Text(
-                'Monto *',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
+              AmountInputField(
                 controller: _amountController,
                 focusNode: _amountFocusNode,
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  _ThousandsSeparatorInputFormatter(),
-                ],
-                decoration: const InputDecoration(
-                  hintText: '0',
-                  prefixText: '\$ ',
-                  prefixStyle: TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 16,
-                  ),
-                ),
-                style: Theme.of(context).textTheme.titleLarge,
+                labelText: 'Monto *',
+                hintText: '0',
+                autofocus: true,
+                onChanged: _onAmountChanged,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Ingresa el monto del gasto';
@@ -278,51 +264,5 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
         setState(() => _isLoading = false);
       }
     }
-  }
-}
-
-class _ThousandsSeparatorInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    if (newValue.text.isEmpty) {
-      return newValue;
-    }
-
-    // Solo permitir dígitos y comas
-    final cleanText = newValue.text.replaceAll(RegExp(r'[^0-9,]'), '');
-
-    // Remover comas para parsear el número
-    final digitsOnly = cleanText.replaceAll(',', '');
-
-    if (digitsOnly.isEmpty) {
-      return const TextEditingValue(
-        text: '',
-        selection: TextSelection.collapsed(offset: 0),
-      );
-    }
-
-    final number = int.tryParse(digitsOnly);
-    if (number == null) {
-      return oldValue;
-    }
-
-    // Formatear manualmente
-    String numStr = number.toString();
-    String result = '';
-
-    for (int i = 0; i < numStr.length; i++) {
-      if (i > 0 && (numStr.length - i) % 3 == 0) {
-        result += ',';
-      }
-      result += numStr[i];
-    }
-
-    return TextEditingValue(
-      text: result,
-      selection: TextSelection.collapsed(offset: result.length),
-    );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'expense.dart';
 
@@ -29,7 +30,7 @@ class ExpenseSummary extends Equatable {
         alerts,
       ];
 
-  static ExpenseSummary fromExpenses(List<Expense> expenses) {
+  static Future<ExpenseSummary> fromExpenses(List<Expense> expenses) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final monthStart = DateTime(now.year, now.month, 1);
@@ -88,7 +89,7 @@ class ExpenseSummary extends Equatable {
     }
 
     // Generar alertas simples
-    final alerts = _generateAlerts(expenses, categoryTotals);
+    final alerts = await _generateAlerts(expenses, categoryTotals);
 
     return ExpenseSummary(
       totalToday: totalToday,
@@ -100,12 +101,36 @@ class ExpenseSummary extends Equatable {
     );
   }
 
-  static List<String> _generateAlerts(
+  static Future<List<String>> _generateAlerts(
     List<Expense> expenses,
     Map<ExpenseCategory, double> categoryTotals,
-  ) {
+  ) async {
     final alertsSet = <String>{}; // Usar Set para evitar duplicados
+
+    // Obtener el límite mensual configurado
+    final prefs = await SharedPreferences.getInstance();
+    final monthlyLimit = prefs.getDouble('monthly_limit') ?? 1000000;
+
     final now = DateTime.now();
+
+    // Calcular total del mes actual
+    final totalMonth = expenses
+        .where((expense) =>
+            expense.date.year == now.year && expense.date.month == now.month)
+        .fold(0.0, (sum, expense) => sum + expense.amount);
+
+    // Alerta por límite mensual
+    final limitPercentage = (totalMonth / monthlyLimit) * 100;
+    if (limitPercentage >= 90) {
+      alertsSet.add(
+          '🚨 ¡Alerta! Has gastado el ${limitPercentage.toStringAsFixed(0)}% de tu límite mensual');
+    } else if (limitPercentage >= 75) {
+      alertsSet.add(
+          '⚠️ Atención: Has gastado el ${limitPercentage.toStringAsFixed(0)}% de tu límite mensual');
+    } else if (limitPercentage >= 50) {
+      alertsSet.add(
+          '📊 Llevas el ${limitPercentage.toStringAsFixed(0)}% de tu límite mensual');
+    }
 
     // Calcular promedio semanal por categoría
     final weeklyAverages = <ExpenseCategory, double>{};
@@ -155,10 +180,14 @@ class ExpenseSummary extends Equatable {
       }
     }
 
-    // Verificar gastos altos individuales (> $500,000)
+    // Alerta por gastos individuales altos (basado en el límite)
+    final highExpenseThreshold = monthlyLimit * 0.1; // 10% del límite mensual
     for (final expense in expenses) {
-      if (expense.amount > 500000) {
-        alertsSet.add('¡Ojo! 👀 Registraste un gasto alto de más de \$500,000');
+      if (expense.amount > highExpenseThreshold) {
+        final percentage =
+            (expense.amount / monthlyLimit * 100).toStringAsFixed(1);
+        alertsSet.add(
+            '¡Ojo! 👀 Registraste un gasto alto equivalente al $percentage% de tu límite mensual');
         break; // Solo mostrar una vez aunque haya múltiples gastos altos
       }
     }
