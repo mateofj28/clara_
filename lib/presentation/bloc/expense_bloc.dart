@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+
+import '../../core/utils/logger.dart';
 import '../../domain/entities/expense.dart';
 import '../../domain/entities/expense_summary.dart';
 import '../../domain/usecases/add_expense_usecase.dart';
@@ -63,11 +65,15 @@ class ExpenseBloc extends ChangeNotifier {
 
   Future<void> addExpense(Expense expense) async {
     try {
+      AppLogger.bloc('addExpense',
+          'Adding expense: ${expense.amount} - ${expense.category.displayName}');
       await addExpenseUseCase(expense);
       _emit(ExpenseAdded());
+      AppLogger.bloc('addExpense', 'Successfully added expense');
       // Recargar después de agregar
       await loadExpenses();
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to add expense', e, stackTrace, 'BLOC');
       _emit(ExpenseError('Error al agregar gasto: ${e.toString()}'));
     }
   }

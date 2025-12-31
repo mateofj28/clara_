@@ -1,25 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/currency_formatter.dart';
 import '../../../../domain/entities/expense_summary.dart';
-
-String formatCurrency(double amount) {
-  // Convertir a entero para evitar decimales
-  int intAmount = amount.toInt();
-
-  // Formatear manualmente con separadores de miles
-  String numStr = intAmount.toString();
-  String result = '';
-
-  for (int i = 0; i < numStr.length; i++) {
-    if (i > 0 && (numStr.length - i) % 3 == 0) {
-      result += ',';
-    }
-    result += numStr[i];
-  }
-
-  return '\$$result';
-}
 
 class ExpenseSummaryCard extends StatelessWidget {
   final ExpenseSummary summary;
@@ -49,7 +32,7 @@ class ExpenseSummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  formatCurrency(summary.totalToday),
+                  CurrencyFormatter.format(summary.totalToday),
                   style: Theme.of(context).textTheme.displayMedium?.copyWith(
                         color: AppTheme.primaryGreen,
                         fontWeight: FontWeight.w600,
@@ -75,7 +58,7 @@ class ExpenseSummaryCard extends StatelessWidget {
                   child: _buildSecondaryInfo(
                     context,
                     'Este mes',
-                    formatCurrency(summary.totalMonth),
+                    CurrencyFormatter.format(summary.totalMonth),
                   ),
                 ),
                 if (summary.topCategory != null) ...[

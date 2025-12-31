@@ -3,27 +3,10 @@ import 'package:intl/intl.dart';
 
 import '../../../core/di/injection_container.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/currency_formatter.dart';
 import '../../../domain/entities/expense.dart';
 import '../../../domain/entities/expense_summary.dart';
 import '../../bloc/expense_bloc.dart';
-
-String formatCurrency(double amount) {
-  // Convertir a entero para evitar decimales
-  int intAmount = amount.toInt();
-
-  // Formatear manualmente con separadores de miles
-  String numStr = intAmount.toString();
-  String result = '';
-
-  for (int i = 0; i < numStr.length; i++) {
-    if (i > 0 && (numStr.length - i) % 3 == 0) {
-      result += ',';
-    }
-    result += numStr[i];
-  }
-
-  return '\$$result';
-}
 
 class MonthlySummaryPage extends StatefulWidget {
   const MonthlySummaryPage({super.key});
@@ -157,7 +140,7 @@ class _MonthlySummaryPageState extends State<MonthlySummaryPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  formatCurrency(summary.totalMonth),
+                  CurrencyFormatter.format(summary.totalMonth),
                   style: Theme.of(context).textTheme.displayMedium?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
@@ -294,7 +277,7 @@ class _MonthlySummaryPageState extends State<MonthlySummaryPage> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    formatCurrency(amount),
+                    CurrencyFormatter.format(amount),
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           color: _getCategoryColor(category),
                           fontWeight: FontWeight.w700,
@@ -608,81 +591,84 @@ class _MonthlySummaryPageState extends State<MonthlySummaryPage> {
                   final percentage =
                       summary.categoryPercentages[entry.key] ?? 0;
 
-                  return AnimatedContainer(
-                    duration: Duration(milliseconds: 600 + (index * 100)),
-                    curve: Curves.easeOutBack,
-                    transform: Matrix4.identity()
-                      ..scale(value)
-                      ..translate(0.0, (1 - value) * 20),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color:
-                            _getCategoryColor(entry.key).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: _getCategoryColor(entry.key)
-                              .withValues(alpha: 0.2),
-                          width: 1,
+                  return Transform.scale(
+                    scale: value,
+                    child: Transform.translate(
+                      offset: Offset(0.0, (1 - value) * 20),
+                      child: AnimatedContainer(
+                        duration: Duration(milliseconds: 600 + (index * 100)),
+                        curve: Curves.easeOutBack,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: _getCategoryColor(entry.key)
+                                .withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: _getCategoryColor(entry.key)
+                                  .withValues(alpha: 0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: _getCategoryColor(entry.key),
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: _getCategoryColor(entry.key)
+                                          .withValues(alpha: 0.4),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                entry.key.emoji,
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                entry.key.displayName,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.textPrimary,
+                                    ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: _getCategoryColor(entry.key),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '${percentage.toStringAsFixed(0)}%',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 11,
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: _getCategoryColor(entry.key),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: _getCategoryColor(entry.key)
-                                      .withValues(alpha: 0.4),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 1),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            entry.key.emoji,
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${entry.key.displayName}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: AppTheme.textPrimary,
-                                ),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: _getCategoryColor(entry.key),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '${percentage.toStringAsFixed(0)}%',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 11,
-                                  ),
-                            ),
-                          ),
-                        ],
                       ),
                     ),
                   );
@@ -728,7 +714,7 @@ class _MonthlySummaryPageState extends State<MonthlySummaryPage> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Total: ${formatCurrency(summary.totalMonth)} distribuido en ${categories.length} categoría${categories.length > 1 ? 's' : ''}',
+                          'Total: ${CurrencyFormatter.format(summary.totalMonth)} distribuido en ${categories.length} categoría${categories.length > 1 ? 's' : ''}',
                           style:
                               Theme.of(context).textTheme.bodyMedium?.copyWith(
                                     color: AppTheme.primaryGreen,
