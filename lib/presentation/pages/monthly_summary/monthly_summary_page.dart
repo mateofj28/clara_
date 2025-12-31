@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/di/injection_container.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../domain/entities/expense.dart';
 import '../../../domain/entities/expense_summary.dart';
 import '../../bloc/expense_bloc.dart';
+import '../../bloc/expense_event.dart';
+import '../../bloc/expense_state.dart';
+import '../../widgets/expense_state_widgets.dart';
 
 class MonthlySummaryPage extends StatefulWidget {
   const MonthlySummaryPage({super.key});
@@ -16,32 +19,11 @@ class MonthlySummaryPage extends StatefulWidget {
 }
 
 class _MonthlySummaryPageState extends State<MonthlySummaryPage> {
-  late ExpenseBloc _expenseBloc;
-
   @override
   void initState() {
     super.initState();
-    _expenseBloc = sl.get<ExpenseBloc>();
-    _expenseBloc.addListener(_onBlocStateChanged);
-    if (_expenseBloc.state is! ExpenseLoaded) {
-      _expenseBloc.loadExpenses();
-    }
-  }
-
-  @override
-  void dispose() {
-    _expenseBloc.removeListener(_onBlocStateChanged);
-    super.dispose();
-  }
-
-  void _onBlocStateChanged() {
-    if (mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {});
-        }
-      });
-    }
+    // Cargar gastos si es necesario
+    context.read<ExpenseBloc>().add(const LoadExpenses());
   }
 
   @override
@@ -56,46 +38,33 @@ class _MonthlySummaryPageState extends State<MonthlySummaryPage> {
   }
 
   Widget _buildContent() {
-    final state = _expenseBloc.state;
+    return BlocBuilder<ExpenseBloc, ExpenseState>(
+      builder: (context, state) {
+        if (state is ExpenseLoading) {
+          return const ExpenseLoadingWidget(
+            message: 'Cargando resumen mensual...',
+          );
+        }
 
-    if (state is ExpenseLoading) {
-      return const Center(
-        child: CircularProgressIndicator(
-          color: AppTheme.primaryGreen,
-        ),
-      );
-    }
+        if (state is ExpenseError) {
+          return ExpenseErrorWidget(
+            message: state.message,
+            onRetry: () =>
+                context.read<ExpenseBloc>().add(const LoadExpenses()),
+          );
+        }
 
-    if (state is ExpenseError) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: AppTheme.textSecondary,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Error al cargar datos',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => _expenseBloc.loadExpenses(),
-              child: const Text('Reintentar'),
-            ),
-          ],
-        ),
-      );
-    }
+        if (state is ExpenseLoaded) {
+          return _buildSummaryContent(state.summary);
+        }
 
-    if (state is ExpenseLoaded) {
-      return _buildSummaryContent(state.summary);
-    }
+        if (state is ExpenseOperationSuccess && state.summary != null) {
+          return _buildSummaryContent(state.summary!);
+        }
 
-    return _buildEmptyContent();
+        return _buildEmptyContent();
+      },
+    );
   }
 
   Widget _buildSummaryContent(ExpenseSummary summary) {

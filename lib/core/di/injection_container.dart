@@ -1,9 +1,12 @@
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../data/datasources/local_expense_datasource.dart';
 import '../../data/repositories/expense_repository_impl.dart';
 import '../../domain/repositories/expense_repository.dart';
 import '../../domain/usecases/add_expense_usecase.dart';
+import '../../domain/usecases/delete_expense_usecase.dart';
 import '../../domain/usecases/get_expense_summary_usecase.dart';
+import '../../domain/usecases/update_expense_usecase.dart';
 import '../../presentation/bloc/expense_bloc.dart';
 
 // Service Locator simple
@@ -48,9 +51,17 @@ Future<void> initializeDependencies() async {
   sl.register<AddExpenseUseCase>(
     AddExpenseUseCase(sl.get<ExpenseRepository>()),
   );
-  
+
   sl.register<GetExpenseSummaryUseCase>(
     GetExpenseSummaryUseCase(sl.get<ExpenseRepository>()),
+  );
+
+  sl.register<UpdateExpenseUseCase>(
+    UpdateExpenseUseCase(sl.get<ExpenseRepository>()),
+  );
+
+  sl.register<DeleteExpenseUseCase>(
+    DeleteExpenseUseCase(sl.get<ExpenseRepository>()),
   );
 
   // Bloc
@@ -58,6 +69,8 @@ Future<void> initializeDependencies() async {
     ExpenseBloc(
       addExpenseUseCase: sl.get<AddExpenseUseCase>(),
       getExpenseSummaryUseCase: sl.get<GetExpenseSummaryUseCase>(),
+      updateExpenseUseCase: sl.get<UpdateExpenseUseCase>(),
+      deleteExpenseUseCase: sl.get<DeleteExpenseUseCase>(),
     ),
   );
 }

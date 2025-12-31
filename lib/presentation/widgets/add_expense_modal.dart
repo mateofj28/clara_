@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../domain/entities/expense.dart';
+import '../bloc/expense_bloc.dart';
+import '../bloc/expense_event.dart';
 import 'amount_input_field.dart';
 
 class AddExpenseModal extends StatefulWidget {
-  final Function(Expense) onExpenseAdded;
-
-  const AddExpenseModal({
-    super.key,
-    required this.onExpenseAdded,
-  });
+  const AddExpenseModal({super.key});
 
   @override
   State<AddExpenseModal> createState() => _AddExpenseModalState();
@@ -237,8 +235,6 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
       final amountText = _amountController.text.replaceAll(',', '');
       final amount = double.parse(amountText);
 
-      print('DEBUG: amountText = "$amountText", amount = $amount'); // Debug
-
       final expense = Expense(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         amount: amount,
@@ -249,16 +245,11 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
             : _noteController.text.trim(),
       );
 
-      widget.onExpenseAdded(expense);
+      // Usar BLoC para agregar el gasto
+      context.read<ExpenseBloc>().add(AddExpense(expense));
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Gasto agregado correctamente'),
-            backgroundColor: AppTheme.primaryGreen,
-          ),
-        );
       }
     } catch (e) {
       if (mounted) {

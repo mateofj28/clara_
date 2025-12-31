@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/di/injection_container.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/entities/expense_summary.dart';
 import '../../bloc/expense_bloc.dart';
+import '../../bloc/expense_event.dart';
+import '../../bloc/expense_state.dart';
 import '../../widgets/add_expense_modal.dart';
+import '../../widgets/expense_state_widgets.dart';
 import '../monthly_summary/monthly_summary_page.dart';
 import '../settings/settings_page.dart';
 import 'widgets/alerts_section.dart';
@@ -19,31 +22,13 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late ExpenseBloc _expenseBloc;
   int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _expenseBloc = sl.get<ExpenseBloc>();
-    _expenseBloc.addListener(_onBlocStateChanged);
-    _expenseBloc.loadExpenses();
-  }
-
-  @override
-  void dispose() {
-    _expenseBloc.removeListener(_onBlocStateChanged);
-    super.dispose();
-  }
-
-  void _onBlocStateChanged() {
-    if (mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {});
-        }
-      });
-    }
+    // Cargar gastos al inicializar
+    context.read<ExpenseBloc>().add(const LoadExpenses());
   }
 
   @override
@@ -81,55 +66,34 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildContent() {
-    final state = _expenseBloc.state;
+    return BlocBuilder<ExpenseBloc, ExpenseState>(
+      builder: (context, state) {
+        if (state is ExpenseLoading) {
+          return const ExpenseLoadingWidget(
+            message: 'Cargando gastos...',
+          );
+        }
 
-    if (state is ExpenseLoading) {
-      return const Center(
-        child: CircularProgressIndicator(
-          color: AppTheme.primaryGreen,
-        ),
-      );
-    }
+        if (state is ExpenseError) {
+          return ExpenseErrorWidget(
+            message: state.message,
+            onRetry: () =>
+                context.read<ExpenseBloc>().add(const LoadExpenses()),
+          );
+        }
 
-    if (state is ExpenseError) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: AppTheme.textSecondary,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Oops, algo salió mal',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              state.message,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.textSecondary,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => _expenseBloc.loadExpenses(),
-              child: const Text('Reintentar'),
-            ),
-          ],
-        ),
-      );
-    }
+        if (state is ExpenseLoaded) {
+          return _buildLoadedContent(state.summary);
+        }
 
-    if (state is ExpenseLoaded) {
-      return _buildLoadedContent(state.summary);
-    }
+        if (state is ExpenseOperationSuccess && state.summary != null) {
+          return _buildLoadedContent(state.summary!);
+        }
 
-    // Estado inicial - mostrar contenido vacío
-    return _buildEmptyContent();
+        // Estado inicial - mostrar contenido vacío
+        return _buildEmptyContent();
+      },
+    );
   }
 
   Widget _buildLoadedContent(ExpenseSummary summary) {
@@ -389,11 +353,7 @@ class _HomePageState extends State<HomePage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => AddExpenseModal(
-        onExpenseAdded: (expense) {
-          _expenseBloc.addExpense(expense);
-        },
-      ),
+      builder: (context) => const AddExpenseModal(),
     );
   }
 }
